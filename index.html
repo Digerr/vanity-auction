@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Vanity</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   :root {
     --bg: #08080A;
@@ -815,6 +816,22 @@ function toggleMute() {
 document.addEventListener('click', () => { ensureAudio(); }, { once: true });
 document.addEventListener('touchstart', () => { ensureAudio(); }, { once: true });
 
+// ============= TG WEB APP =============
+const tg = window.Telegram?.WebApp;
+if (tg) {
+  tg.ready();
+  tg.expand();
+  tg.setHeaderColor('#08080A');
+  tg.setBackgroundColor('#08080A');
+}
+
+const API_BASE = ''; // относительные пути, тот же домен
+
+let currentUser = null;
+if (tg?.initDataUnsafe?.user) {
+  currentUser = tg.initDataUnsafe.user;
+}
+
 // ============= DATA =============
 const BOT_NAMES = [
   'Evelone', 'papich_returns', 'casino_god228', 'TwitchRefugee',
@@ -909,6 +926,34 @@ let state = {
   history: []
 };
 
+let isLoading = false;
+
+// ===== Реальная загрузка состояния с бэкенда =====
+async function fetchState() {
+  try {
+    const r = await fetch(API_BASE + '/api/state', { cache: 'no-store' });
+    if (!r.ok) return;
+    const data = await r.json();
+    if (data && data.holder) {
+      state.currentBid = data.currentBid;
+      state.nextBid = data.nextBid;
+      state.holder = data.holder;
+      state.holderAvatar = data.holderAvatar;
+      state.holderColors = data.holderColors;
+      state.holderMeta = data.holderMeta;
+      state.message = data.message;
+      state.overthrows = data.overthrows;
+      state.history = data.history || [];
+      render();
+    }
+  } catch (e) {
+    console.warn('fetchState failed', e);
+  }
+}
+
+// Polling каждые 5 секунд — обновляем трон без перезагрузки
+setInterval(fetchState, 5000);
+
 function fmt(n) { return n.toLocaleString('ru-RU'); }
 
 function render() {
@@ -957,8 +1002,9 @@ function updateCount() {
   document.getElementById('charCount').textContent = document.getElementById('inMsg').value.length;
 }
 
-function confirmBid() {
-  const name = document.getElementById('inName').value.trim() || ('Аноним_' + Math.floor(Math.random() * 999));
+async function confirmBid() {
+  if (isLoading) return;
+  const name = document.getElementById('inName').value.trim();
   const msg = document.getElementById('inMsg').value.trim() || 'Трон мой. Diskussion beendet.';
   const cost = state.nextBid;
 
@@ -968,35 +1014,95 @@ function confirmBid() {
     return;
   }
 
-  const prevHolder = state.holder;
-  const colors = COLORS[Math.floor(Math.random() * COLORS.length)];
+  // Если нет initData — работаем в демо-режиме (для локального теста)
+  if (!tg?.initData) {
+    const anonName = name || ('Аноним_' + Math.floor(Math.random() * 999));
+    const colors = COLORS[Math.floor(Math.random() * COLORS.length)];
+    state.balance -= cost;
+    state.currentBid = cost;
+    state.holder = anonName;
+    state.holderAvatar = anonName[0].toUpperCase();
+    state.holderColors = colors;
+    state.holderMeta = 'демо-режим · локально';
+    state.message = msg;
+    state.nextBid = cost + INCREMENT;
+    state.overthrows += 1;
+    state.history.unshift({
+      name: anonName, avatar: anonName[0].toUpperCase(), colors,
+      action: `сбросил ${state.holder}`, amount: cost, time: Date.now()
+    });
+    closeSheet('bidSheet');
+    document.getElementById('inName').value = '';
+    document.getElementById('inMsg').value = '';
+    document.getElementById('charCount').textContent = '0';
+    bump();
+    playSound('bid');
+    toast(`Трон за ${fmt(cost)} ★ (демо)`, 'success');
+    render();
+    return;
+  }
 
-  state.balance -= cost;
-  state.currentBid = cost;
-  state.holder = name;
-  state.holderAvatar = name[0].toUpperCase();
-  state.holderColors = colors;
-  state.holderMeta = Math.floor(Math.random() * 15000 + 800).toLocaleString('ru-RU') + ' зрителей · KICK';
-  state.message = msg;
-  state.nextBid = cost + INCREMENT;
-  state.overthrows += 1;
+  // Реальный режим — POST на /api/bid с initData
+  isLoading = true;
+  const btn = document.querySelector('#bidSheet .btn-primary');
+  if (btn) { btn.disabled = true; btn.textContent = 'Ставка...'; }
 
-  state.history.unshift({
-    name, avatar: name[0].toUpperCase(), colors,
-    action: prevHolder ? `сбросил ${prevHolder}` : 'занял трон',
-    amount: cost,
-    time: Date.now()
-  });
+  try {
+    const r = await fetch(API_BASE + '/api/bid', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        initData: tg.initData,
+        message: msg,
+        displayName: name || (currentUser?.username ? '@' + currentUser.username : '')
+      })
+    });
+    const data = await r.json();
 
-  closeSheet('bidSheet');
-  document.getElementById('inName').value = '';
-  document.getElementById('inMsg').value = '';
-  document.getElementById('charCount').textContent = '0';
+    if (!r.ok) {
+      playSound('error');
+      if (data.error === 'auth_failed') {
+        toast('Ошибка авторизации Telegram', 'error');
+      } else if (data.error === 'rate_limit') {
+        toast(data.message || 'Слишком быстро', 'error');
+      } else if (data.error === 'empty_message') {
+        toast('Введите сообщение', 'error');
+      } else {
+        toast('Ошибка: ' + (data.message || data.error), 'error');
+      }
+      return;
+    }
 
-  bump();
-  playSound('bid');
-  toast(`Трон за ${fmt(cost)} ★`, 'success');
-  render();
+    // Успех — обновляем локальный state из ответа
+    if (data.state) {
+      state.currentBid = data.state.currentBid;
+      state.nextBid = data.state.nextBid;
+      state.holder = data.state.holder;
+      state.holderAvatar = data.state.holderAvatar;
+      state.holderColors = data.state.holderColors;
+      state.holderMeta = data.state.holderMeta;
+      state.message = data.state.message;
+      state.overthrows = data.state.overthrows;
+      state.history = data.state.history || [];
+    }
+    state.balance -= cost;
+
+    closeSheet('bidSheet');
+    document.getElementById('inName').value = '';
+    document.getElementById('inMsg').value = '';
+    document.getElementById('charCount').textContent = '0';
+
+    bump();
+    playSound('bid');
+    toast(`Трон за ${fmt(cost)} ★`, 'success');
+    render();
+  } catch (e) {
+    playSound('error');
+    toast('Сеть недоступна', 'error');
+  } finally {
+    isLoading = false;
+    if (btn) { btn.disabled = false; btn.textContent = 'Занять трон'; }
+  }
 }
 
 function bump() {
@@ -1073,38 +1179,8 @@ function openFaq() {
   document.getElementById('faqSheet').classList.add('active');
 }
 
-// BOT SIMULATION
-function botBid() {
-  const name = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
-  const msg = BOT_MESSAGES[Math.floor(Math.random() * BOT_MESSAGES.length)];
-  const cost = state.nextBid;
-  const colors = COLORS[Math.floor(Math.random() * COLORS.length)];
-  const prev = state.holder;
-
-  state.currentBid = cost;
-  state.holder = name;
-  state.holderAvatar = name[0].toUpperCase();
-  state.holderColors = colors;
-  state.holderMeta = Math.floor(Math.random() * 15000 + 800).toLocaleString('ru-RU') + ' зрителей · KICK';
-  state.message = msg;
-  state.nextBid = cost + INCREMENT;
-  state.overthrows += 1;
-
-  state.history.unshift({
-    name, avatar: name[0].toUpperCase(), colors,
-    action: prev ? `сбросил ${prev}` : 'занял трон',
-    amount: cost, time: Date.now()
-  });
-
-  bump();
-  playSound('botbid');
-  render();
-}
-
-function scheduleBot() {
-  const delay = 6000 + Math.random() * 12000;
-  setTimeout(() => { botBid(); scheduleBot(); }, delay);
-}
+// BOT SIMULATION отключена — теперь реальные ставки с бэкенда
+// (BOT_NAMES, BOT_MESSAGES, COLORS остаются для потенциального демо-режима)
 
 document.querySelectorAll('.overlay').forEach(o => {
   o.addEventListener('click', e => {
@@ -1115,8 +1191,45 @@ document.querySelectorAll('.overlay').forEach(o => {
 // INIT
 renderFaq();
 render();
-scheduleBot();
-setTimeout(botBid, 7000);
+// Подгружаем реальное состояние с бэкенда
+fetchState();
+// Если в течение 3 сек state не пришёл (например, вне Telegram) — подкидываем демо-bots
+setTimeout(() => {
+  if (state.holder === 'Evelone' && state.overthrows === 0) {
+    botBidDemo();
+    scheduleBotDemo();
+  }
+}, 3000);
+
+// Демо-режим — только если бэкенд недоступен (для локального теста вне Telegram)
+function botBidDemo() {
+  const name = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
+  const msg = BOT_MESSAGES[Math.floor(Math.random() * BOT_MESSAGES.length)];
+  const cost = state.nextBid;
+  const colors = COLORS[Math.floor(Math.random() * COLORS.length)];
+  const prev = state.holder;
+  state.currentBid = cost;
+  state.holder = name;
+  state.holderAvatar = name[0].toUpperCase();
+  state.holderColors = colors;
+  state.holderMeta = Math.floor(Math.random() * 15000 + 800).toLocaleString('ru-RU') + ' зрителей · KICK';
+  state.message = msg;
+  state.nextBid = cost + INCREMENT;
+  state.overthrows += 1;
+  state.history.unshift({
+    name, avatar: name[0].toUpperCase(), colors,
+    action: prev ? `сбросил ${prev}` : 'занял трон',
+    amount: cost, time: Date.now()
+  });
+  bump();
+  playSound('botbid');
+  render();
+}
+
+function scheduleBotDemo() {
+  const delay = 8000 + Math.random() * 15000;
+  setTimeout(() => { botBidDemo(); scheduleBotDemo(); }, delay);
+}
 </script>
 
 </body>
