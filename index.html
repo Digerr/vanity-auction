@@ -931,7 +931,8 @@ let isLoading = false;
 // ===== Реальная загрузка состояния с бэкенда =====
 async function fetchState() {
   try {
-    const r = await fetch(API_BASE + '/api/state', { cache: 'no-store' });
+    const url = API_BASE + '/api/state' + (tg?.initData ? '?initData=' + encodeURIComponent(tg.initData) : '');
+    const r = await fetch(url, { cache: 'no-store' });
     if (!r.ok) return;
     const data = await r.json();
     if (data && data.holder) {
@@ -944,6 +945,10 @@ async function fetchState() {
       state.message = data.message;
       state.overthrows = data.overthrows;
       state.history = data.history || [];
+      // Реальный баланс юзера с бэкенда (если в Telegram)
+      if (typeof data.userBalance === 'number') {
+        state.balance = data.userBalance;
+      }
       render();
     }
   } catch (e) {
@@ -1067,6 +1072,10 @@ async function confirmBid() {
         toast(data.message || 'Слишком быстро', 'error');
       } else if (data.error === 'empty_message') {
         toast('Введите сообщение', 'error');
+      } else if (data.error === 'insufficient_funds') {
+        state.balance = data.balance;
+        toast(`Не хватает звёзд. Нужно ${fmt(data.needed)}, у тебя ${fmt(data.balance)}`, 'error');
+        render();
       } else {
         toast('Ошибка: ' + (data.message || data.error), 'error');
       }
@@ -1085,7 +1094,11 @@ async function confirmBid() {
       state.overthrows = data.state.overthrows;
       state.history = data.state.history || [];
     }
-    state.balance -= cost;
+    if (typeof data.userBalance === 'number') {
+      state.balance = data.userBalance;
+    } else {
+      state.balance -= cost;
+    }
 
     closeSheet('bidSheet');
     document.getElementById('inName').value = '';
@@ -1112,11 +1125,79 @@ function bump() {
   el.classList.add('bump');
 }
 
-function topUp() {
-  state.balance += 1000;
-  playSound('bid', 0.5);
-  toast('+1000 ★ (демо)', 'success');
-  render();
+async function topUp() {
+  // Если вне Telegram — нет смысла (openInvoice не работает)
+  if (!tg?.initData) {
+    toast('Открой из Telegram чтобы пополнить', 'error');
+    return;
+  }
+
+  // Простое окно выбора суммы
+  const amount = prompt('Сколько звёзд купить?\nМинимум 50 ★', '1000');
+  if (!amount) return;
+  const amt = parseInt(amount, 10);
+  if (!amt || amt < 50) {
+    toast('Минимум 50 ★', 'error');
+    return;
+  }
+
+  toast('Создаю платёж...', '');
+  try {
+    // 1. Создаём invoice на сервере
+    const r = await fetch(API_BASE + '/api/create-invoice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData: tg.initData, amount: amt })
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      toast('Ошибка: ' + (data.message || data.error), 'error');
+      return;
+    }
+
+    // 2. Открываем Telegram invoice
+    tg.openInvoice(data.invoiceUrl, async (status) => {
+      if (status === 'paid') {
+        toast('Платёж прошёл, проверяю...', '');
+        // 3. Запрашиваем сервер проверить транзакцию и зачислить
+        let attempts = 0;
+        const verify = async () => {
+          attempts++;
+          try {
+            const vr = await fetch(API_BASE + '/api/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ initData: tg.initData })
+            });
+            const vdata = await vr.json();
+            if (vdata.ok) {
+              state.balance = vdata.newBalance;
+              toast(`+${vdata.amount} ★ зачислено`, 'success');
+              playSound('bid', 0.5);
+              render();
+            } else if (attempts < 4) {
+              // API может задерживаться, retry через 2 сек
+              setTimeout(verify, 2000);
+            } else {
+              toast('Платёж принят, придёт в течение минуты', 'success');
+              // Через 10 сек синхронизируем state
+              setTimeout(fetchState, 10000);
+            }
+          } catch (e) {
+            if (attempts < 4) setTimeout(verify, 2000);
+            else toast('Ошибка проверки. Обнови позже.', 'error');
+          }
+        };
+        setTimeout(verify, 1000);
+      } else if (status === 'failed') {
+        toast('Платёж не прошёл', 'error');
+      } else if (status === 'pending') {
+        toast('Платёж в обработке', '');
+      }
+    });
+  } catch (e) {
+    toast('Сеть недоступна', 'error');
+  }
 }
 
 function toast(msg, type) {

@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const GH_TOKEN = process.env.GH_TOKEN;
 const REPO = 'Digerr/vanity-auction';
 const STATE_PATH = 'data/state.json';
+const BALANCES_PATH = 'data/balances.json';
 const TG_TOKEN = process.env.TG_TOKEN;
 const LOG_CHANNEL = process.env.LOG_CHANNEL;
 
@@ -32,34 +33,72 @@ function validateInitData(initData) {
   return null;
 }
 
-// ===== GitHub state storage =====
-async function getState() {
-  const r = await fetch(
-    `https://api.github.com/repos/${REPO}/contents/${STATE_PATH}`,
-    { headers: { Authorization: `token ${GH_TOKEN}`, Accept: 'application/vnd.github+json' } }
-  );
-  if (!r.ok) throw new Error('getState failed: ' + r.status);
-  const data = await r.json();
-  const content = Buffer.from(data.content, 'base64').toString('utf-8');
-  return { state: JSON.parse(content), sha: data.sha };
+// ===== Pretty display name (без @) =====
+function getDisplayName(user) {
+  const first = user.first_name || '';
+  const last = user.last_name || '';
+  const name = (first + ' ' + last).trim();
+  if (name) return name;
+  return user.username ? '@' + user.username : ('User ' + user.id);
 }
 
-async function saveState(state, sha) {
-  const content = Buffer.from(JSON.stringify(state)).toString('base64');
+// ===== GitHub file storage =====
+async function getGHFile(path) {
   const r = await fetch(
-    `https://api.github.com/repos/${REPO}/contents/${STATE_PATH}`,
+    `https://api.github.com/repos/${REPO}/contents/${path}`,
+    { headers: { Authorization: `token ${GH_TOKEN}`, Accept: 'application/vnd.github+json' } }
+  );
+  if (!r.ok) {
+    if (r.status === 404) return null;
+    throw new Error('getGHFile failed: ' + r.status);
+  }
+  const data = await r.json();
+  return { content: JSON.parse(Buffer.from(data.content, 'base64').toString('utf-8')), sha: data.sha };
+}
+
+async function saveGHFile(path, content, sha, message) {
+  const body = {
+    message: message || 'update',
+    content: Buffer.from(JSON.stringify(content)).toString('base64')
+  };
+  if (sha) body.sha = sha;
+  const r = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/${path}`,
     {
       method: 'PUT',
       headers: { Authorization: `token ${GH_TOKEN}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: 'bid update', content, sha })
+      body: JSON.stringify(body)
     }
   );
   if (!r.ok) {
     const txt = await r.text();
-    throw new Error('saveState failed: ' + r.status + ' ' + txt);
+    throw new Error('saveGHFile failed: ' + r.status + ' ' + txt);
   }
   const data = await r.json();
   return data.content.sha;
+}
+
+// getState / saveState (упрощённые обёртки)
+async function getState() {
+  const r = await getGHFile(STATE_PATH);
+  return r ? { state: r.content, sha: r.sha } : { state: null, sha: null };
+}
+async function saveState(state, sha) {
+  return saveGHFile(STATE_PATH, state, sha, 'bid update');
+}
+
+// getBalance / saveBalance (per-user)
+async function getBalances() {
+  const r = await getGHFile(BALANCES_PATH);
+  return r ? { balances: r.content, sha: r.sha } : { balances: {}, sha: null };
+}
+async function saveBalances(balances, sha) {
+  return saveGHFile(BALANCES_PATH, balances, sha, 'balance update');
+}
+
+async function getBalance(userId) {
+  const { balances } = await getBalances();
+  return balances[userId] || 0;
 }
 
 // ===== Telegram log =====
@@ -79,6 +118,36 @@ async function sendLog(text) {
   } catch (e) {}
 }
 
+// ===== Telegram Stars API =====
+async function createStarInvoice(userId, amount) {
+  const r = await fetch(`https://api.telegram.org/bot${TG_TOKEN}/createInvoiceLink`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      title: `${amount} звёзд для Vanity`,
+      description: 'Пополнение баланса в аукционе тщеславия',
+      payload: JSON.stringify({ uid: userId, amount, ts: Date.now() }),
+      currency: 'XTR',
+      prices: [{ label: 'Stars', amount }],
+      provider_token: '' // пусто для Stars
+    })
+  });
+  const data = await r.json();
+  if (!data.ok) throw new Error('createInvoiceLink: ' + JSON.stringify(data));
+  return data.result;
+}
+
+async function getStarTransactions(limit = 100, offset) {
+  const url = new URL(`https://api.telegram.org/bot${TG_TOKEN}/getStarTransactions`);
+  url.searchParams.set('limit', limit);
+  if (offset) url.searchParams.set('offset', offset);
+  const r = await fetch(url);
+  const data = await r.json();
+  if (!data.ok) throw new Error('getStarTransactions: ' + JSON.stringify(data));
+  return data.result.transactions || [];
+}
+
+// ===== Helpers =====
 function fmt(n) { return n.toLocaleString('ru-RU'); }
 
 function makeAvatarColors(seed) {
@@ -106,4 +175,11 @@ function json(res, data, status = 200) {
   res.end(JSON.stringify(data));
 }
 
-module.exports = { validateInitData, getState, saveState, sendLog, fmt, makeAvatarColors, json };
+module.exports = {
+  validateInitData,
+  getDisplayName,
+  getState, saveState,
+  getBalances, saveBalances, getBalance,
+  createStarInvoice, getStarTransactions,
+  sendLog, fmt, makeAvatarColors, json
+};
