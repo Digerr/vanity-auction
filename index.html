@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Vanity</title>
+<style>
+  :root {
+    --bg: #08080A;
+    --surface: #101013;
+    --surface-2: #16161B;
+    --border: rgba(255, 255, 255, 0.06);
+    --border-strong: rgba(255, 255, 255, 0.12);
+    --text: #F4F4F5;
+    --text-2: #A1A1AA;
+    --text-3: #71717A;
+    --text-4: #52525B;
+    --accent: #FA5A5A;
+    --accent-2: #FF7878;
+    --gold: #E8B339;
+    --radius: 16px;
+    --radius-sm: 12px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'tnum';
+  }
+
+  #app {
+    max-width: 440px;
+    margin: 0 auto;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* HEADER */
+  header {
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .brand-mark {
+    width: 24px; height: 24px;
+    background: var(--text);
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--bg);
+    font-weight: 800;
+    font-size: 13px;
+  }
+  .brand-name {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.2px;
+  }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .icon-btn {
+    width: 32px; height: 32px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-2);
+    transition: background 0.15s;
+    padding: 0;
+  }
+  .icon-btn:hover { background: var(--surface); color: var(--text); }
+  .icon-btn svg { width: 14px; height: 14px; }
+  .balance-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    padding: 6px 10px;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+  .balance-pill:active { background: var(--surface); }
+  .balance-pill .star {
+    width: 11px; height: 11px;
+    background: var(--gold);
+    -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2l2.6 7.6H22l-6.2 4.5 2.4 7.5L12 17.1 5.8 21.6l2.4-7.5L2 9.6h7.4z'/></svg>") center/contain no-repeat;
+            mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2l2.6 7.6H22l-6.2 4.5 2.4 7.5L12 17.1 5.8 21.6l2.4-7.5L2 9.6h7.4z'/></svg>") center/contain no-repeat;
+  }
+  .balance-pill .add {
+    color: var(--text-3);
+    font-size: 13px;
+    line-height: 1;
+    margin-left: 2px;
+  }
+
+  /* MAIN */
+  main {
+    flex: 1;
+    padding: 24px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow: hidden;
+  }
+
+  /* BANNER */
+  .banner {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+    min-height: 0;
+  }
+  .banner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(250, 90, 90, 0.06), transparent 60%);
+    pointer-events: none;
+  }
+
+  .banner-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+    margin-bottom: 18px;
+  }
+  .live {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .live-dot {
+    width: 5px; height: 5px;
+    background: #4ADE80;
+    border-radius: 50%;
+    box-shadow: 0 0 6px #4ADE80;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .holder-block {
+    text-align: center;
+    margin-bottom: 18px;
+  }
+  .holder-avatar {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    margin: 0 auto 12px;
+    background: linear-gradient(135deg, #6B8EFF, #A855F7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    font-weight: 700;
+    color: white;
+  }
+  .holder-name {
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    margin-bottom: 3px;
+  }
+  .holder-meta {
+    font-size: 12px;
+    color: var(--text-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .message-box {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 16px;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.4;
+    text-align: center;
+    word-break: break-word;
+    margin-bottom: 18px;
+    min-height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .message-box.empty {
+    color: var(--text-4);
+    font-weight: 400;
+    font-style: italic;
+    border-style: dashed;
+  }
+
+  .price-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-top: 1px solid var(--border);
+    margin-top: auto;
+  }
+  .price-label {
+    font-size: 11px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .price-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .price-value .star {
+    width: 14px; height: 14px;
+    background: var(--gold);
+    -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2l2.6 7.6H22l-6.2 4.5 2.4 7.5L12 17.1 5.8 21.6l2.4-7.5L2 9.6h7.4z'/></svg>") center/contain no-repeat;
+            mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2l2.6 7.6H22l-6.2 4.5 2.4 7.5L12 17.1 5.8 21.6l2.4-7.5L2 9.6h7.4z'/></svg>") center/contain no-repeat;
+  }
+  .price-right { text-align: right; }
+
+  .bid-btn {
+    width: 100%;
+    padding: 18px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.1px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: background 0.15s, transform 0.1s;
+    font-family: inherit;
+    box-shadow: 0 4px 20px rgba(250, 90, 90, 0.25);
+  }
+  .bid-btn:hover { background: var(--accent-2); }
+  .bid-btn:active { transform: scale(0.99); }
+  .bid-btn .price {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 5px 12px;
+    border-radius: 99px;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .bid-btn .price .star {
+    width: 11px; height: 11px;
+    background: currentColor;
+    -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2l2.6 7.6H22l-6.2 4.5 2.4 7.5L12 17.1 5.8 21.6l2.4-7.5L2 9.6h7.4z'/></svg>") center/contain no-repeat;
+            mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2l2.6 7.6H22l-6.2 4.5 2.4 7.5L12 17.1 5.8 21.6l2.4-7.5L2 9.6h7.4z'/></svg>") center/contain no-repeat;
+  }
+
+  .log {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text-3);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .log button {
+    color: var(--text-2);
+    background: none;
+    border: none;
+    font-family: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-color: var(--border-strong);
+    padding: 0;
+    font-size: 11px;
+  }
+  .log button:hover { color: var(--text); }
+
+  .banner.bump { animation: bump 0.45s ease; }
+  @keyframes bump {
+    0% { transform: scale(1); }
+    35% { transform: scale(1.012); }
+    100% { transform: scale(1); }
+  }
+
+  /* SHEET */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 100;
+  }
+  .overlay.active {
+    display: flex;
+    animation: ovIn 0.2s ease;
+  }
+  @keyframes ovIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .sheet {
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-bottom: none;
+    border-radius: 20px 20px 0 0;
+    padding: 8px 20px max(24px, env(safe-area-inset-bottom));
+    width: 100%;
+    max-width: 440px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: sheetIn 0.3s cubic-bezier(.2,.8,.3,1);
+    scrollbar-width: none;
+  }
+  .sheet::-webkit-scrollbar { display: none; }
+  @keyframes sheetIn {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  .sheet-grip {
+    width: 36px; height: 4px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    margin: 0 auto 18px;
+  }
+  .sheet h3 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    margin-bottom: 4px;
+  }
+  .sheet-desc {
+    font-size: 13px;
+    color: var(--text-2);
+    margin-bottom: 18px;
+    line-height: 1.4;
+  }
+
+  .field { margin-bottom: 12px; }
+  .field-label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-3);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  .field-input,
+  .field-textarea {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 13px 14px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    transition: border-color 0.15s;
+    resize: none;
+  }
+  .field-input:focus,
+  .field-textarea:focus {
+    outline: none;
+    border-color: var(--border-strong);
+  }
+  .field-counter {
+    text-align: right;
+    font-size: 10px;
+    color: var(--text-4);
+    margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .summary {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 13px 14px;
+    margin: 16px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .summary-label { font-size: 12px; color: var(--text-2); }
+  .summary-amount {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .summary-amount .star {
+    width: 12px; height: 12px;
+    background: var(--gold);
+    -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2l2.6 7.6H22l-6.2 4.5 2.4 7.5L12 17.1 5.8 21.6l2.4-7.5L2 9.6h7.4z'/></svg>") center/contain no-repeat;
+            mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2l2.6 7.6H22l-6.2 4.5 2.4 7.5L12 17.1 5.8 21.6l2.4-7.5L2 9.6h7.4z'/></svg>") center/contain no-repeat;
+  }
+
+  .sheet-actions { display: flex; gap: 8px; }
+  .btn {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+  .btn-ghost {
+    background: var(--surface-2);
+    color: var(--text-2);
+  }
+  .btn-ghost:hover { background: var(--surface); }
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+  }
+  .btn-primary:hover { background: var(--accent-2); }
+
+  /* HISTORY */
+  .hist-list {
+    max-height: 50vh;
+    overflow-y: auto;
+    scrollbar-width: none;
+    margin: 0 -8px;
+    padding: 0 8px;
+  }
+  .hist-list::-webkit-scrollbar { display: none; }
+  .hist-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 4px;
+    border-bottom: 1px solid var(--border);
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .hist-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+  }
+  .hist-text { flex: 1; min-width: 0; }
+  .hist-name {
+    font-size: 13px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .hist-desc {
+    font-size: 11px;
+    color: var(--text-3);
+    margin-top: 1px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .hist-amount {
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    white-space: nowrap;
+  }
+  .hist-amount .star {
+    width: 10px; height: 10px;
+    background: var(--gold);
+    -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2l2.6 7.6H22l-6.2 4.5 2.4 7.5L12 17.1 5.8 21.6l2.4-7.5L2 9.6h7.4z'/></svg>") center/contain no-repeat;
+            mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2l2.6 7.6H22l-6.2 4.5 2.4 7.5L12 17.1 5.8 21.6l2.4-7.5L2 9.6h7.4z'/></svg>") center/contain no-repeat;
+  }
+
+  /* FAQ */
+  .faq-item {
+    border-bottom: 1px solid var(--border);
+    padding: 4px 0;
+  }
+  .faq-item:last-child { border-bottom: none; }
+  .faq-q {
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: left;
+    padding: 12px 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .faq-q .chev {
+    color: var(--text-3);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+  .faq-item.open .faq-q .chev { transform: rotate(180deg); }
+  .faq-a {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease, padding 0.25s ease;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-2);
+  }
+  .faq-item.open .faq-a {
+    max-height: 400px;
+    padding: 0 0 14px;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-80px);
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    padding: 11px 18px;
+    border-radius: 99px;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 200;
+    transition: transform 0.3s cubic-bezier(.2,.8,.3,1);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    max-width: 88%;
+    text-align: center;
+    color: var(--text);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: #4ADE80; }
+  .toast.error { border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header>
+    <div class="brand">
+      <div class="brand-mark">V</div>
+      <div class="brand-name">Vanity</div>
+    </div>
+    <div class="header-right">
+      <button class="icon-btn" id="muteBtn" onclick="toggleMute()" aria-label="Звук">
+        <svg id="iconUnmute" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 010 7.07"/><path d="M19.07 4.93a10 10 0 010 14.14"/></svg>
+        <svg id="iconMute" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+      </button>
+      <button class="balance-pill" onclick="topUp()">
+        <span class="star"></span>
+        <span id="balance">0</span>
+        <span class="add">+</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <div class="banner" id="banner">
+      <div class="banner-top">
+        <span>Сейчас на троне</span>
+        <div class="live">
+          <span class="live-dot"></span>
+          <span>live</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="holder-block">
+          <div class="holder-avatar" id="holderAvatar">E</div>
+          <div class="holder-name" id="holderName">Evelone</div>
+          <div class="holder-meta" id="holderMeta">12 400 зрителей · KICK</div>
+        </div>
+
+        <div class="message-box empty" id="message">
+          Место свободно. Будь первым, кто займёт трон.
+        </div>
+      </div>
+
+      <div class="price-row">
+        <div>
+          <div class="price-label">Текущая ставка</div>
+          <div class="price-value">
+            <span class="star"></span>
+            <span id="currentBid">1 000</span>
+          </div>
+        </div>
+        <div class="price-right">
+          <div class="price-label">Сбросов</div>
+          <div class="price-value" id="overthrows">0</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="bid-btn" onclick="openBid()">
+      <span>Перебить ставку</span>
+      <span class="price">
+        <span class="star"></span>
+        <span id="nextBid">1 001</span>
+      </span>
+    </button>
+
+    <div class="log">
+      <span id="lastBidText">пока никто не перебивал</span>
+      <span>·</span>
+      <button onclick="openHistory()">история</button>
+      <span>·</span>
+      <button onclick="openFaq()">faq</button>
+    </div>
+  </main>
+</div>
+
+<!-- BID SHEET -->
+<div class="overlay" id="bidSheet">
+  <div class="sheet">
+    <div class="sheet-grip"></div>
+    <h3>Перебить ставку</h3>
+    <p class="sheet-desc">Займи трон. Скажи чату всё, что о нём думаешь.</p>
+
+    <div class="field">
+      <label class="field-label">Твой ник</label>
+      <input class="field-input" id="inName" type="text" placeholder="streamer_king" maxlength="20">
+    </div>
+
+    <div class="field">
+      <label class="field-label">Сообщение на троне (до 140 символов)</label>
+      <textarea class="field-textarea" id="inMsg" rows="3" placeholder="Сами вы нищие, я лучше всех" maxlength="140" oninput="updateCount()"></textarea>
+      <div class="field-counter"><span id="charCount">0</span>/140</div>
+    </div>
+
+    <div class="summary">
+      <span class="summary-label">Спишется со счёта</span>
+      <span class="summary-amount">
+        <span class="star"></span>
+        <span id="modalBid">1 001</span>
+      </span>
+    </div>
+
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" onclick="closeSheet('bidSheet')">Отмена</button>
+      <button class="btn btn-primary" onclick="confirmBid()">Занять трон</button>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY SHEET -->
+<div class="overlay" id="historySheet">
+  <div class="sheet">
+    <div class="sheet-grip"></div>
+    <h3>История ставок</h3>
+    <p class="sheet-desc">Кто, кого и за сколько сбросил с трона.</p>
+    <div class="hist-list" id="histList"></div>
+    <div class="sheet-actions" style="margin-top:16px;">
+      <button class="btn btn-primary" onclick="closeSheet('historySheet')">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<!-- FAQ SHEET -->
+<div class="overlay" id="faqSheet">
+  <div class="sheet">
+    <div class="sheet-grip"></div>
+    <h3>FAQ</h3>
+    <p class="sheet-desc">Коротко о том, что это и как работает.</p>
+    <div id="faqList"></div>
+    <div class="sheet-actions" style="margin-top:18px;">
+      <button class="btn btn-primary" onclick="closeSheet('faqSheet')">Понятно</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============= AUDIO =============
+let audioCtx = null;
+let muted = false;
+
+function ensureAudio() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch(e) {}
+  }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playSound(type, volume = 1) {
+  if (muted) return;
+  ensureAudio();
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime;
+
+  if (type === 'bid') {
+    // Три ноты вверх — кассовый "касса" звук
+    [659, 988, 1319].forEach((freq, i) => {
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      o.frequency.value = freq;
+      o.type = 'triangle';
+      const t = now + i * 0.05;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.18 * volume, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+      o.start(t);
+      o.stop(t + 0.2);
+    });
+  } else if (type === 'botbid') {
+    // Тише, две ноты
+    [523, 784].forEach((freq, i) => {
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      o.frequency.value = freq;
+      o.type = 'triangle';
+      const t = now + i * 0.06;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.08 * volume, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+      o.start(t);
+      o.stop(t + 0.17);
+    });
+  } else if (type === 'error') {
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.connect(g); g.connect(audioCtx.destination);
+    o.frequency.setValueAtTime(220, now);
+    o.frequency.exponentialRampToValueAtTime(110, now + 0.15);
+    o.type = 'sawtooth';
+    g.gain.setValueAtTime(0.15, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+    o.start(now); o.stop(now + 0.2);
+  }
+}
+
+function toggleMute() {
+  muted = !muted;
+  document.getElementById('iconUnmute').style.display = muted ? 'none' : '';
+  document.getElementById('iconMute').style.display = muted ? '' : 'none';
+  if (!muted) {
+    ensureAudio();
+    playSound('bid', 0.5);
+  }
+}
+
+// Resume audio on first interaction (mobile requirement)
+document.addEventListener('click', () => { ensureAudio(); }, { once: true });
+document.addEventListener('touchstart', () => { ensureAudio(); }, { once: true });
+
+// ============= DATA =============
+const BOT_NAMES = [
+  'Evelone', 'papich_returns', 'casino_god228', 'TwitchRefugee',
+  'KickChad', 'donate_mashina', 'SlotMaster_777', 'boris_stream',
+  'banditTV', 'slotbandit', 'risk_taker', 'StPenguin',
+  'casinolive_ru', 'streamers_hate_me', 'PRO_bettor',
+  'lootbox_king', 'x100_to_x0', 'allin_andy', 'skuf_tv'
+];
+
+const BOT_MESSAGES = [
+  'Сами вы нищие, я лучше всех',
+  'Я ебал этот чат, подписывайтесь на мой тг',
+  'Этот стример сосёт, я тут король',
+  'Кто тут нищий? Я не нищий. Я БОГ.',
+  'Донать мне, а не этому клоуну выше',
+  'Этот баннер был моим. Верни.',
+  'Подписка = респект. Не подписка = попуск.',
+  'Залетайте в тг @best_casino — бонус 300%',
+  'Стриму через час. Залетайте на раздачу.',
+  'Качаем ставки, пацаны. Не тормозим.',
+  'Вчера слил депозит, сегодня заберу трон.',
+  'Я тут надолго. Никто не перебьёт.'
+];
+
+const COLORS = [
+  ['#6B8EFF', '#A855F7'],
+  ['#FA5A5A', '#FF8A3D'],
+  ['#4ADE80', '#10B981'],
+  ['#E8B339', '#FA5A5A'],
+  ['#A855F7', '#EC4899'],
+  ['#6B8EFF', '#4ADE80'],
+  ['#FF8A3D', '#E8B339'],
+  ['#EC4899', '#A855F7']
+];
+
+const FAQ = [
+  {
+    q: 'Что это вообще такое?',
+    a: 'Vanity — аукцион тщеславия. Один слот, один баннер. Кто заплатил больше всех — тот сейчас на троне: его ник, аватар и сообщение видят все, кто открыл приложение. Пока кто-то не перебьёт ставку.'
+  },
+  {
+    q: 'Как это работает?',
+    a: 'Ставка начинается с 1 000 звёзд. Каждый следующий перебив стоит на 1 звезду больше. Заплатил — занял трон. Следующий перебьёт тебя за +1 звезду. И так до бесконечности, пока кому-то надоест.'
+  },
+  {
+    q: 'Откуда берутся звёзды?',
+    a: 'Telegram Stars. Покупаются прямо в боте через App Store / Google Play. В этой демо звёзды виртуальные — нажми на баланс, чтобы пополнить.'
+  },
+  {
+    q: 'Что я получаю, заняв трон?',
+    a: 'Твой ник, аватар и сообщение видят все, кто открывает приложение. Плюс — ты можешь пиарить свой канал, донатить в чате или просто унижать конкурентов. Это чистая эмоция, ничего материального.'
+  },
+  {
+    q: 'Что если меня перебьют?',
+    a: 'Ты слетаешь с трона. Твоё сообщение уходит в историю. Чтобы вернуться — нужно перебить новую ставку (уже дороже). Деньги за предыдущую ставку не возвращаются.'
+  },
+  {
+    q: 'Можно ли вернуть деньги?',
+    a: 'Нет. Все ставки финальные. Ты платишь за эмоцию и за минуту славы, а не за товар. Перед тем как ставить — подумай, стоит ли оно того.'
+  },
+  {
+    q: 'Кто видит моё сообщение?',
+    a: 'Все, кто открывает приложение, пока ты на троне. Плюс — сообщение автоматически попадает в публичный канал-лог (если подключён) и остаётся в истории навсегда.'
+  },
+  {
+    q: 'Это легально?',
+    a: 'Демо — да, это просто игра. В реальной версии: звёзды покупаются у Telegram (официальный платёж), налоги платишь сам как самозанятый. Запрещённого контента в сообщениях быть не должно — модерация есть.'
+  },
+  {
+    q: 'Что нельзя писать на троне?',
+    a: 'Спам, скам, призывы к насилию, детскую порнографию, персональные данные других людей без согласия, рекламу наркотиков. За нарушения — бан без возврата звёзд. Список полный — в правилах.'
+  },
+  {
+    q: 'Сколько зарабатывает создатель?',
+    a: 'В реальной версии — комиссия 10-15% с каждой ставки. Остальное идёт на оплату Telegram Stars (Apple/Google берут 30%), сервера и развитие. Чистая маржа — около 5-7% от оборота.'
+  }
+];
+
+const START_BID = 1000;
+const INCREMENT = 1;
+
+let state = {
+  balance: 5000,
+  currentBid: 1000,
+  nextBid: 1001,
+  holder: 'Evelone',
+  holderAvatar: 'E',
+  holderColors: ['#6B8EFF', '#A855F7'],
+  holderMeta: '12 400 зрителей · KICK',
+  message: '',
+  overthrows: 0,
+  history: []
+};
+
+function fmt(n) { return n.toLocaleString('ru-RU'); }
+
+function render() {
+  document.getElementById('balance').textContent = fmt(state.balance);
+  document.getElementById('holderName').textContent = state.holder;
+  document.getElementById('holderMeta').textContent = state.holderMeta;
+
+  const av = document.getElementById('holderAvatar');
+  av.textContent = state.holderAvatar;
+  av.style.background = `linear-gradient(135deg, ${state.holderColors[0]}, ${state.holderColors[1]})`;
+
+  const msg = document.getElementById('message');
+  if (state.message) {
+    msg.textContent = state.message;
+    msg.classList.remove('empty');
+  } else {
+    msg.textContent = 'Место свободно. Будь первым, кто займёт трон.';
+    msg.classList.add('empty');
+  }
+
+  document.getElementById('currentBid').textContent = fmt(state.currentBid);
+  document.getElementById('nextBid').textContent = fmt(state.nextBid);
+  document.getElementById('overthrows').textContent = state.overthrows;
+  document.getElementById('modalBid').textContent = fmt(state.nextBid);
+
+  if (state.history.length > 0) {
+    const last = state.history[0];
+    document.getElementById('lastBidText').textContent = `${last.name} сбросил за ${fmt(last.amount)}`;
+  }
+}
+
+function openBid() {
+  if (state.balance < state.nextBid) {
+    playSound('error');
+    toast('Не хватает звёзд — нажми баланс для пополнения', 'error');
+    return;
+  }
+  document.getElementById('bidSheet').classList.add('active');
+}
+
+function closeSheet(id) {
+  document.getElementById(id).classList.remove('active');
+}
+
+function updateCount() {
+  document.getElementById('charCount').textContent = document.getElementById('inMsg').value.length;
+}
+
+function confirmBid() {
+  const name = document.getElementById('inName').value.trim() || ('Аноним_' + Math.floor(Math.random() * 999));
+  const msg = document.getElementById('inMsg').value.trim() || 'Трон мой. Diskussion beendet.';
+  const cost = state.nextBid;
+
+  if (state.balance < cost) {
+    playSound('error');
+    toast('Недостаточно звёзд', 'error');
+    return;
+  }
+
+  const prevHolder = state.holder;
+  const colors = COLORS[Math.floor(Math.random() * COLORS.length)];
+
+  state.balance -= cost;
+  state.currentBid = cost;
+  state.holder = name;
+  state.holderAvatar = name[0].toUpperCase();
+  state.holderColors = colors;
+  state.holderMeta = Math.floor(Math.random() * 15000 + 800).toLocaleString('ru-RU') + ' зрителей · KICK';
+  state.message = msg;
+  state.nextBid = cost + INCREMENT;
+  state.overthrows += 1;
+
+  state.history.unshift({
+    name, avatar: name[0].toUpperCase(), colors,
+    action: prevHolder ? `сбросил ${prevHolder}` : 'занял трон',
+    amount: cost,
+    time: Date.now()
+  });
+
+  closeSheet('bidSheet');
+  document.getElementById('inName').value = '';
+  document.getElementById('inMsg').value = '';
+  document.getElementById('charCount').textContent = '0';
+
+  bump();
+  playSound('bid');
+  toast(`Трон за ${fmt(cost)} ★`, 'success');
+  render();
+}
+
+function bump() {
+  const el = document.getElementById('banner');
+  el.classList.remove('bump');
+  void el.offsetWidth;
+  el.classList.add('bump');
+}
+
+function topUp() {
+  state.balance += 1000;
+  playSound('bid', 0.5);
+  toast('+1000 ★ (демо)', 'success');
+  render();
+}
+
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (type ? ' ' + type : '');
+  void t.offsetWidth;
+  t.classList.add('show');
+  clearTimeout(window._t);
+  window._t = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+function openHistory() {
+  const list = document.getElementById('histList');
+  list.innerHTML = '';
+  if (state.history.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-4);font-size:12px;">Пока никто не перебивал</div>';
+  } else {
+    state.history.forEach(h => {
+      const mins = Math.max(0, Math.floor((Date.now() - h.time) / 60000));
+      const item = document.createElement('div');
+      item.className = 'hist-item';
+      item.innerHTML = `
+        <div class="hist-avatar" style="background:linear-gradient(135deg,${h.colors[0]},${h.colors[1]})">${h.avatar}</div>
+        <div class="hist-text">
+          <div class="hist-name">${h.name}</div>
+          <div class="hist-desc">${h.action} · ${mins}м назад</div>
+        </div>
+        <div class="hist-amount"><span class="star"></span>${fmt(h.amount)}</div>
+      `;
+      list.appendChild(item);
+    });
+  }
+  document.getElementById('historySheet').classList.add('active');
+}
+
+function renderFaq() {
+  const list = document.getElementById('faqList');
+  list.innerHTML = '';
+  FAQ.forEach((item, i) => {
+    const el = document.createElement('div');
+    el.className = 'faq-item';
+    el.innerHTML = `
+      <button class="faq-q" onclick="toggleFaq(${i})">
+        <span>${item.q}</span>
+        <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="faq-a">${item.a}</div>
+    `;
+    list.appendChild(el);
+  });
+}
+
+function toggleFaq(i) {
+  const items = document.querySelectorAll('.faq-item');
+  items[i].classList.toggle('open');
+}
+
+function openFaq() {
+  document.getElementById('faqSheet').classList.add('active');
+}
+
+// BOT SIMULATION
+function botBid() {
+  const name = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
+  const msg = BOT_MESSAGES[Math.floor(Math.random() * BOT_MESSAGES.length)];
+  const cost = state.nextBid;
+  const colors = COLORS[Math.floor(Math.random() * COLORS.length)];
+  const prev = state.holder;
+
+  state.currentBid = cost;
+  state.holder = name;
+  state.holderAvatar = name[0].toUpperCase();
+  state.holderColors = colors;
+  state.holderMeta = Math.floor(Math.random() * 15000 + 800).toLocaleString('ru-RU') + ' зрителей · KICK';
+  state.message = msg;
+  state.nextBid = cost + INCREMENT;
+  state.overthrows += 1;
+
+  state.history.unshift({
+    name, avatar: name[0].toUpperCase(), colors,
+    action: prev ? `сбросил ${prev}` : 'занял трон',
+    amount: cost, time: Date.now()
+  });
+
+  bump();
+  playSound('botbid');
+  render();
+}
+
+function scheduleBot() {
+  const delay = 6000 + Math.random() * 12000;
+  setTimeout(() => { botBid(); scheduleBot(); }, delay);
+}
+
+document.querySelectorAll('.overlay').forEach(o => {
+  o.addEventListener('click', e => {
+    if (e.target === o) o.classList.remove('active');
+  });
+});
+
+// INIT
+renderFaq();
+render();
+scheduleBot();
+setTimeout(botBid, 7000);
+</script>
+
+</body>
+</html>

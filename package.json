@@ -1,0 +1,9 @@
+{
+  "name": "vanity-auction",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Vanity Auction — Telegram Mini App",
+  "scripts": {
+    "start": "npx serve ."
+  }
+}
